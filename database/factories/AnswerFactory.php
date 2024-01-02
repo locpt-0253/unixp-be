@@ -18,11 +18,14 @@ class AnswerFactory extends Factory
      */
     public function definition(): array
     {
+        $randomDate = $this->faker->dateTimeBetween("-1 year");
         return [
             'content' => $this->faker->paragraph,
-            'is_anonymous' => $this->faker->boolean,
+            'isanonymous' => $this->faker->boolean,
             'user_id' => User::all()->random()->id,
             'question_id' => Question::all()->random()->id,
+            'created_at' => $randomDate,
+            'updated_at' => $randomDate,
         ];
     }
 }

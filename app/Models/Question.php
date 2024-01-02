@@ -14,6 +14,8 @@ class Question extends Model
 
     protected $primaryKey = 'id';
 
+    protected $appends = ['createdat', 'updatedat'];
+
     protected $fillable = [
         'title',
         'content',
@@ -22,6 +24,16 @@ class Question extends Model
         'userid',
         'acceptedanswerid',
     ];
+
+    public function getCreatedatAttribute()
+    {
+        return $this->attributes['created_at'];
+    }
+
+    public function getUpdatedatAttribute()
+    {
+        return $this->attributes['updated_at'];
+    }
 
     public function answers()
     {
