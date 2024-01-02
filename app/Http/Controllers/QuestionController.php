@@ -68,12 +68,13 @@ class QuestionController extends Controller
                 $result = preg_replace($key, $value, $result);
             }
 
-            $perPage = $request->input("pageSize", 10);
-
+            $perPage = $request->input('pageSize', 5);
+            $page = $request->input('page', 1);
+            $offset = ($page - 1) * $perPage;
             $tags = $request->input('tags', []);
-
-            $questions = Question::with('author', 'tags')
-                ->withCount('answers', 'likes')
+            $sort = $request->input('sort','newest');
+            $questionsQueryBuilder = Question::with('author', 'tags')
+                ->withCount('answers as answercount', 'likes as likecount')
                 ->when($request->sort, function ($query) use ($request) {
                     if ($request->sort == 'latest') {
                         $query->orderBy('created_at','desc');
@@ -97,21 +98,40 @@ class QuestionController extends Controller
                         default:
                     }
                 })
+                ->when($sort, function ($query) use ($sort) {
+                    if ($sort == 'newest') {
+                        $query->orderBy('created_at','desc');
+                    } else {
+                        $query->orderBy('viewcount', 'desc');
+                    }
+                })
                 ->when(count($tags), function ($query) use ($tags) {
                     foreach ($tags as $tag)
                     {
                         $query->whereHas('tags', function ($q) use ($tag) {
-                            $q->where('tags.tag_name', $tag);
+                            $q->where('tags.tagname', $tag);
                         });
                     }
-                })
-                ->paginate($perPage);
+                });
+
+                $totalItems = $questionsQueryBuilder->count();
+                $totalPages = ceil($totalItems / $perPage);
+                $questions = $questionsQueryBuilder->limit($perPage)
+                    ->offset($offset)
+                    ->get();
 
             return response()->json([
-                'pagination' => $questions,
-                'message' => 'Searched successfully',
-                'tags' => $tags,
-                'success' => true,
+                'status' => 'success',
+                'message' => 'Search results were successfully',
+                'data' => [
+                    'data' => $questions,
+                    'meta' => [
+                        'totalItems' => $totalItems,
+                        'totalPages' => $totalPages,
+                        'currentPage' => (int)$page,
+                        'pageSize' => $perPage,
+                    ],
+                ]
             ]);
         } catch (Exception $e) {
             return response()->json([
@@ -124,19 +144,17 @@ class QuestionController extends Controller
     public function show($id)
     {
         try {
-            $question = Question::with('author', 'answers', 'tags')
-                ->withCount('likes')
+            $question = Question::with('author', 'tags', 'answers')
+                ->withCount('likes as likecount')
                 ->findOrFail($id);
 
             foreach ($question->answers as $answer) {
                 $answer->user;
-                $answer->likes_count = $answer->likes()->count();
+                $answer->likecount = $answer->likes()->count();
                 unset($answer->likes);
             }
 
-            return response()->json([
-                'data' => $question,
-            ], 200);
+            return response()->json($question, 200);
         } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -149,6 +167,18 @@ class QuestionController extends Controller
     {
         try {
             
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'success' => false,
+            ], 500);
+        }
+    }
+
+    public function like(Request $request)
+    {
+        try {
+
         } catch (Exception $e) {
             return response()->json([
                 'message' => $e->getMessage(),

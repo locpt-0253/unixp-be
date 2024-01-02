@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('answers', function (Blueprint $table) {
             $table->id();
             $table->longText('content');
-            $table->smallInteger('is_anonymous')->default(0);
+            $table->smallInteger('isanonymous')->default(0);
             $table->foreignId('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->foreignId('question_id')->references('id')->on('questions')->cascadeOnDelete();
             $table->timestamps();

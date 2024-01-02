@@ -14,12 +14,24 @@ class Answer extends Model
 
     protected $primaryKey = 'id';
 
+    protected $appends = ['createdat', 'updatedat'];
+
     protected $fillable = [
         'content',
-        'is_anonymous',
+        'isanonymous',
         'user_id',
         'question_id',
     ];
+
+    public function getCreatedatAttribute()
+    {
+        return $this->attributes['created_at'];
+    }
+
+    public function getUpdatedatAttribute()
+    {
+        return $this->attributes['updated_at'];
+    }
 
     public function user()
     {
